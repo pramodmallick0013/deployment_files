@@ -1,0 +1,400 @@
+﻿Docker
+
+Docker Need
+Diff between Containerization and VM's
+When to use docker and When to use VM's
+-----------------------------------------
+Docker Host -      software is installed
+Docker Engine -     having Client server model
+Docker Daemon          -- which manages docker commands
+Docker client        --which sends docer commands to daemon
+REST API's - will help communication between Daemon and Client
+
+Docker Machine  - to create different docker server on different machine
+
+-----------------
+
+Docker Hub - upload your images 
+Docker Registry  --this is a service which will help to store  your docker images in repositorty
+Docker Repository -- store same images with diferent tags  or different images
+Private -private to your organization 
+Public  --shared across 
+
+
+Artifactory is a central repo -- here also we can store the docker images 
+
+Docker Image - set of instructions given for container , written in go lanugae , predefiend systax are there
+Docker Container -- this is a working copy of your images 
+
+Docker Architecture
+-----
+
+Docker version
+DOcker -D info
+Docker ps -a ( Descrtiption each tab)
+Docker Images ( Description each tab)
+busybox echo "hello world"
+
+rename container 
+Docker --name=containername image
+
+Taging docker
+
+docker tag busybox repo/imagename
+
+remove container who are in exited state
+docker ps -a | grep Exited | awk '{print $1}'| xargs docker rm
+
+remove images
+docker images | grep latest | awk '{print $3}'| xargs docker rmi
+Docker rmi -f
+
+Docker push 
+Docker push repo/imagename
+
+Image Namespace : No prefix belongs to default repo
+
+Docker Pull
+
+Docker history docker imagename
+
+container commands
+Start in interactive mode
+
+Docker run -it imagename /bin/bash
+
+
+The -i flag is the key driver,
+which makes the container interactive by grabbing the standard input (STDIN) of
+the container. The -t flag allocates a pseudo-TTY or a pseudo terminal (terminal
+emulator) and then assigns that to the container.
+we are going to launch an interactive container by using
+the ubuntu:14.04 image and /bin/bash as the command
+
+sudo docker run -i -t ubuntu:14.04 /bin/bash
+Control P + Control Q come out 
+docker run -it --name=mycontainer ubuntu /bin/bash
+
+
+
+docker attach CI
+
+reverse proxy [--apache web server ---earlier people used to do it ....>
+
+now people using nginx 
+
+there are basically two types of containers:
+
+active container--running containers having ip address
+inactive container--it doesnot have ip address...
+docker run -d --name=web nginx
+
+if the image is not found locally it will get downloaded from docker hub...
+
+there are two types of ip
+
+static ip device is assigned a static ip address the address doesnot change 
+dynamic  ip       which is assigned by the network when they connect and can change over time and usage..
+
+engine ex---reverse proxy web 
+Docker diff
+
+Running in background 
+sudo docker run -i -t ubuntu:14.04 /bin/bash
+
+2d055c2ea2a2
+
+docker stop
+docker container start CI ( start container)
+docker container stop CI ( stop container)
+docker container restart CI ( restart container)
+docker container pause CI ( pausecontainer)
+docker container unpause CI ( unpause container)
+
+you want to remove the container when it exits --using --rm command 
+
+docker container run --rm --name container_with_rm alpine ping -c 3 google.com
+this container will be remvoed when actually it exits
+
+docker inspect container 
+
+exec command - FOr debuggin purpose
+
+sudo docker exec -it myubuntucont1 ls -lart /tmp
+
+want to set a hostname
+sudo docker run -h hostname -it ubuntu:14.04 /bin/bash
+
+Working directory
+sudo docker run -w /test -it ubuntu:14.04 /bin/bash
+
+Set env variable
+ sudo docker run --env "WEB_HOST=172.168.1.1" -it ubuntu:14.04 /bin/bash
+ 
+ set ulimit
+ sudo docker run --ulimit nproc=10 -it ubuntu:14.04 /bin/bash
+ verify ulimit -a 
+ 
+ lable a container
+ docker container run -d --label env=dev nginx
+ 
+ filter a container
+ docker ps --filter label=env=dev
+ --------------------------------------------------------------------------
+ Docker images
+ 
+ docker container commit myalpine repo/alpine:training
+ 
+ ------------------------
+ 
+ Tar file images
+ 
+Export 
+ Export a container’s filesystem as a tar archive
+ docker export [OPTIONS] CONTAINER
+ docker export 424875c68683 >/tmp/ubuntu.tar
+ 
+ Import
+ 
+ Import the contents from a tarball to create a filesystem image
+ docker import [OPTIONS] file|URL|- [REPOSITORY[:TAG]]
+ 
+ cat /tmp/ubuntu.tar | docker import - dockrerepo/ubunut14.05
+ 
+ Export 
+ 
+ 
+ cat /tmp/ubuntu.tar | docker import - dockrerepo/ubunut14.05
+ 
+ ===========================================================
+
+In which year docker was launched?
+
+in 2013 it was launched
+
+can i create ubuntu container on windows?
+
+i can not install ubuntu container directly on windows...!!
+===================
+
+
+docker storage:
+
+
+if suppose container is deleted data will get removed..
+
+
+
+docker storage is used to keep the data even if the container is deleted
+
+types of docker
+
+docker volume:
+
+it is a mountable entity which can be used to keep or store the data  in the docker file system
+
+volume is like a pen drive
+
+we can attach this pendrive to your container
+once you attach this pendrive(volume) we can store the data inside the volume...
+
+or we can remove the pen drive once we used 
+
+two containers ----  1st container --- pen drive was attached 
+i want to attach this pen drive to 2nd container...
+
+bind mounts:
+
+local system on host machine 
+
+path /home/testDir----   inside this directory whatever i am storing ..that gets mapped to 
+
+bind mounts
+
+======================
+
+examples:
+
+ docker volume demo-vol1
+ docker volume create demo-vol1
+ docker volume create demo-vol2
+
+
+
+
+root@ip-172-31-12-192:/home/ubuntu# docker run -it --mount source=demo-vol1,destination=/app -d ubuntu
+6d951d45865dee1e9ce36fa8ee29b6d5516f8a270077a2de35bd19ee87e59e6c
+root@ip-172-31-12-192:/home/ubuntu# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+6d951d45865d        ubuntu              "/bin/bash"              About a minute ago   Up About a minute                       laughing_cerf
+8f630f461ea4        nginx               "nginx -g 'daemon of…"   About an hour ago    Up About an hour    80/tcp              web
+b90489b1db42        nginx               "nginx -g 'daemon of…"   About an hour ago    Up About an hour    80/tcp              wen
+0dbf5f70d97c        ubuntu              "/bin/bash"              About an hour ago    Up About an hour                        shikhacontainer
+b2590ca1fd2f        ubuntu              "/bin/bash"              About an hour ago    Up About an hour                        mystifying_brown
+root@ip-172-31-12-192:/home/ubuntu# docker exec -it 6d951d45865d bash
+root@6d951d45865d:/# ls
+app  boot  etc   lib    lib64   media  opt   root  sbin  sys  usr
+bin  dev   home  lib32  libx32  mnt    proc  run   srv   tmp  var
+
+
+root@6d951d45865d:/# cd app/
+root@6d951d45865d:/app# touch a1.txt
+root@6d951d45865d:/app# touch a2.txt
+root@6d951d45865d:/app# ls
+a1.txt  a2.txt
+root@6d951d45865d:/app# touch a3.txt
+root@6d951d45865d:/app# ls
+a1.txt  a2.txt  a3.txt
+root@6d951d45865d:/app#
+===========
+root@ip-172-31-12-192:/home/ubuntu# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+8f630f461ea4        nginx               "nginx -g 'daemon of…"   About an hour ago   Up About an hour    80/tcp              web
+b90489b1db42        nginx               "nginx -g 'daemon of…"   About an hour ago   Up About an hour    80/tcp              wen
+0dbf5f70d97c        ubuntu              "/bin/bash"              About an hour ago   Up About an hour                        shikhacontainer
+b2590ca1fd2f        ubuntu              "/bin/bash"              About an hour ago   Up About an hour                        mystifying_brown
+root@ip-172-31-12-192:/home/ubuntu# docker ps -a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+8f630f461ea4        nginx               "nginx -g 'daemon of…"   About an hour ago   Up About an hour    80/tcp              web
+b90489b1db42        nginx               "nginx -g 'daemon of…"   About an hour ago   Up About an hour    80/tcp              wen
+0dbf5f70d97c        ubuntu              "/bin/bash"              About an hour ago   Up About an hour                        shikhacontainer
+b2590ca1fd2f        ubuntu              "/bin/bash"              About an hour ago   Up About an hour                        mystifying_brown
+root@ip-172-31-12-192:/home/ubuntu# docker rm -f $( docker ps -a -q)
+8f630f461ea4
+b90489b1db42
+0dbf5f70d97c
+b2590ca1fd2f
+root@ip-172-31-12-192:/home/ubuntu# docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+=
+
+
+root@ip-172-31-12-192:/home/ubuntu# docker run -it --mount source=demo-vol1,destination=/app -d ubuntu
+1e6de6a9f40fc26e3e1a1a21f67e96e52d19065b52c1d37b670f1cef26d07c06
+root@ip-172-31-12-192:/home/ubuntu# docker container ls
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+1e6de6a9f40f        ubuntu              "/bin/bash"         16 seconds ago      Up 15 seconds                           adoring_lamarr
+root@ip-172-31-12-192:/home/ubuntu# docker exec -it 1e6de6a9f40f bash
+root@1e6de6a9f40f:/# ls
+app  boot  etc   lib    lib64   media  opt   root  sbin  sys  usr
+bin  dev   home  lib32  libx32  mnt    proc  run   srv   tmp  var
+root@1e6de6a9f40f:/# ls app
+a1.txt  a2.txt  a3.txt
+root@1e6de6a9f40f:/#
+
+docker volume vs docker image
+
+bind mounts
+mounts a directory from host machine to the container...
+
+docker run 
+
+scenario:
+
+on the basis of requirements we can use ...docker volume & bind mounts
+
+whatever is in test folder that get copied into my container 
+
+
+
+root@ip-172-31-12-192:/home/ubuntu# docker run -it --mount source=demo-vol1,destination=/app -d ubuntu
+1e6de6a9f40fc26e3e1a1a21f67e96e52d19065b52c1d37b670f1cef26d07c06
+root@ip-172-31-12-192:/home/ubuntu# docker container ls
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+1e6de6a9f40f        ubuntu              "/bin/bash"         16 seconds ago      Up 15 seconds                           adoring_lamarr
+root@ip-172-31-12-192:/home/ubuntu# docker exec -it 1e6de6a9f40f bash
+root@1e6de6a9f40f:/# ls
+app  boot  etc   lib    lib64   media  opt   root  sbin  sys  usr
+bin  dev   home  lib32  libx32  mnt    proc  run   srv   tmp  var
+root@1e6de6a9f40f:/# ls app
+a1.txt  a2.txt  a3.txt
+root@1e6de6a9f40f:/# exit
+exit
+root@ip-172-31-12-192:/home/ubuntu# mkdir test
+root@ip-172-31-12-192:/home/ubuntu# cd test/
+root@ip-172-31-12-192:/home/ubuntu/test# ls
+root@ip-172-31-12-192:/home/ubuntu/test# cd ..
+root@ip-172-31-12-192:/home/ubuntu# docker run -it -v /home/ubuntu/test:/demo -d ubuntu
+fd9225580c7b4e1221444b7e772dc988a7aad17de30e6bab9c90cc654a195d7f
+root@ip-172-31-12-192:/home/ubuntu# docker container ls
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+fd9225580c7b        ubuntu              "/bin/bash"         10 seconds ago      Up 8 seconds                            priceless_allen
+1e6de6a9f40f        ubuntu              "/bin/bash"         22 minutes ago      Up 22 minutes                           adoring_lamarr
+root@ip-172-31-12-192:/home/ubuntu# ls
+test
+
+
+Run a command in a running container
+root@ip-172-31-12-192:/home/ubuntu# docker exec -it fd9225580c7b bash
+root@fd9225580c7b:/# ls
+bin   demo  etc   lib    lib64   media  opt   root  sbin  sys  usr
+boot  dev   home  lib32  libx32  mnt    proc  run   srv   tmp  var
+root@fd9225580c7b:/# cd demo
+root@fd9225580c7b:/demo# ls
+root@fd9225580c7b:/demo# touch shikha gayatri pramod gauri afroz
+root@fd9225580c7b:/demo# ls
+afroz  gauri  gayatri  pramod  shikha
+root@fd9225580c7b:/demo# exit
+exit
+root@ip-172-31-12-192:/home/ubuntu# cd test/
+root@ip-172-31-12-192:/home/ubuntu/test# ls
+afroz  gauri  gayatri  pramod  shikha
+root@ip-172-31-12-192:/home/ubuntu/test# touch satya
+root@ip-172-31-12-192:/home/ubuntu/test# ls
+afroz  gauri  gayatri  pramod  satya  shikha
+root@ip-172-31-12-192:/home/ubuntu/test# docker exec -it fd9225580c7b bash
+root@fd9225580c7b:/# ls demo/
+afroz  gauri  gayatri  pramod  satya  shikha
+root@fd9225580c7b:/#
+
+=======================================================================================
+
+use cases:
+   external hard drive ....  
+
+one server to another server (high availability,replica ---> database backups,transaction logs )
+
+when to use bind mounts & volumes ?
+
+for bind mounts can i share the same host machine address ?
+
+at a time how many volumes & bind mounts  are connected ? 
+
+==========================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
