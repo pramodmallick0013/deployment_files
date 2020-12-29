@@ -1,0 +1,301 @@
+Kubernetes Cluster Creation step by step:(Pod Creation )
+
+
+Create three Machines (ubuntu)
+
+security group & key-pair we need to create & then launch your virtual machines...
+
+K-Master
+K-WN1
+K-WN2
+
+connect with public ip addresses using 
+mobaxterm application :
+
+Install docker on it ....
+
+apt install docker.io -y
+
+
+now its time to create 
+cluster with pods & its pod network
+
+run all this command on Master and WN 1 & 2
+
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+apt-get update && sudo apt-get install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+stop let me do it
+cat <<EOF | tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
+
+
+-----------------------------------------------------------------------------------------------------
+
+Creating a single control-plane cluster with kubeadm
+On Master
+
+kubeadm init --pod-network-cidr=192.168.0.0/16 --ignore-preflight-errors=NumCPU
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+chown $(id -u):$(id -g) $HOME/.kube/config
+
+================================================================
+run this command on wn1 n wn2
+kubeadm join 172.31.33.202:6443 --token lj9cld.zsqctuaclpo1xj1d \
+    --discovery-token-ca-cert-hash sha256:8780b57a79ec3d8ac976347be08a86a5966531d96d871383e5cfd8a1949246fb
+========================================================
+Run "kubectl get nodes" Master Node and see the output worker node 1 & 2 added to Master now
+
+kubectl get nodes 
+
+==============================================
+
+My Nodes are not in ready state so that we have to run yaml file script to get pods ready 
+
+kubectl apply -f https://docs.projectcalico.org/v3.14/manifests/calico.yaml
+
+root@K-Master:/home/ubuntu# kubectl get nodes
+NAME       STATUS   ROLES    AGE     VERSION
+k-master   Ready    master   12m     v1.18.3
+k-wn1      Ready    <none>   7m26s   v1.18.3
+k-wn2      Ready    <none>   6m44s   v1.18.3
+it will take some time to get ready with all status ready
+
+Successfully my cluster setup is ready now ........................
+
+--------------------------------------------------------------------------------------------------------------
+
+ubuntu@K-Master:~$ mkdir k8s
+ubuntu@K-Master:~$ cd k8s
+ubuntu@K-Master:~/k8s$kubectl get ns
+======================
+kubectl create namespace demo
+
+kubectl get ns
+
+==================
+kubectl get pods 
+no resources found in default namespace
+
+1.
+kubectl --namespace kube-system get pods
+
+or 
+
+kubectl -n kube-system get pods
+======================
+want to see your config
+
+kubectl config view
+=====================
+find the context
+
+kubectl config get-contexts
+
+===========================
+demosys context creation :
+
+ kubectl config set-context demosys --namespace=demo --user=kubernetes-admin --cluster=kubernetes
+
+===============================
+kubectl config use-context demosys
+here it will switched to context demosys
+
+====================
+  kubectl get pods
+
+  kubectl config get-context
+
+======================
+
+
+root@K-Master:/home/k8s# kubectl config get-contexts
+CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
+*         demosys                       kubernetes   kubernetes-admin   demo
+          kubernetes-admin@kubernetes   kubernetes   kubernetes-admin
+root@K-Master:/home/k8s# kubectl config use-context kubernetes-admin@kubernetes
+Switched to context "kubernetes-admin@kubernetes".
+root@K-Master:/home/k8s# kubectl get pods
+No resources found in default namespace.
+
+
+========================================
+
+***want to delete your context
+
+root@K-Master:/home/k8s# kubectl config delete-context demosys
+deleted context demosys from /root/.kube/config
+root@K-Master:/home/k8s#
+
+
+root@K-Master:/home/k8s# kubectl config get-contexts
+CURRENT   NAME                          CLUSTER      AUTHINFO           NAMESPACE
+*         kubernetes-admin@kubernetes   kubernetes   kubernetes-admin
+
+
+
+
+=============
+
+root@K-Master:/home/k8s# kubectl get componentstatus
+NAME                 STATUS    MESSAGE             ERROR
+controller-manager   Healthy   ok
+scheduler            Healthy   ok
+etcd-0               Healthy   {"health":"true"}
+
+
+===============
+
+
+pods creation :
+
+root@K-Master:/home/ubuntu/pods# vi nginx-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+    tier: dev
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+
+
+
+root@K-Master:/home/ubuntu/pods# kubectl create -f nginx-pod.yaml
+pod/nginx-pod created
+
+root@K-Master:/home/ubuntu/pods# kubectl get pod
+NAME        READY   STATUS              RESTARTS   AGE
+nginx-pod   0/1     ContainerCreating   0          9s
+
+root@K-Master:/home/ubuntu/pods# kubectl get pods
+NAME        READY   STATUS    RESTARTS   AGE
+nginx-pod   1/1     Running   0          26s
+
+
+root@K-Master:/home/ubuntu/pods# kubectl get pods -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP                NODE    NOMINATED NODE   READINESS GATES
+nginx-pod   1/1     Running   0          99s   192.168.185.130   k-wn2   <none>           <none>
+
+root@K-Master:/home/ubuntu/pods# kubectl describe pod nginx-pod
+Name:         nginx-pod
+Namespace:    default
+Priority:     0
+Node:         k-wn2/172.31.32.95
+Start Time:   Wed, 17 Jun 2020 14:47:13 +0000
+Labels:       app=nginx
+              tier=dev
+Annotations:  cni.projectcalico.org/podIP: 192.168.185.130/32
+              cni.projectcalico.org/podIPs: 192.168.185.130/32
+Status:       Running
+IP:           192.168.185.130
+IPs:
+  IP:  192.168.185.130
+Containers:
+  nginx-container:
+    Container ID:   docker://adc701dc659a2ac962b2877d15a20059832e066937a22b846cd9f4ed69d4bd1b
+    Image:          nginx
+    Image ID:       docker-pullable://nginx@sha256:21f32f6c08406306d822a0e6e8b7dc81f53f336570e852e25fbe1e3e3d0d0133
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Wed, 17 Jun 2020 14:47:22 +0000
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-62bd6 (ro)
+Conditions:
+  Type              Status
+  Initialized       True
+  Ready             True
+  ContainersReady   True
+  PodScheduled      True
+Volumes:
+  default-token-62bd6:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  default-token-62bd6
+    Optional:    false
+QoS Class:       BestEffort
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type    Reason     Age    From               Message
+  ----    ------     ----   ----               -------
+  Normal  Scheduled  4m7s   default-scheduler  Successfully assigned default/nginx-pod to k-wn2
+  Normal  Pulling    4m6s   kubelet, k-wn2     Pulling image "nginx"
+  Normal  Pulled     3m58s  kubelet, k-wn2     Successfully pulled image "nginx"
+  Normal  Created    3m58s  kubelet, k-wn2     Created container nginx-container
+  Normal  Started    3m58s  kubelet, k-wn2     Started container nginx-container
+root@K-Master:/home/ubuntu/pods#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
