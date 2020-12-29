@@ -1,0 +1,135 @@
+Configuration Management Tool
+IaaCode
+
+Inventory:-List of hosts
+Frank--->100 Machine
+         Each every machine and installing Jdk 8 
+		 Ansible-->Angentless
+
+Simple, agentless IT automation
+that anyone can use
+
+----------------------------Installation of Ansible---------------------------
+--Commands to install Ansible on Master node
+
+        sudo su
+	yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+	yum install ansible -y
+
+vi /etc/ansible/ansible.cfg
+uncomment inventory and roles_path
+
+vi hosts
+public key change after reboot private not change
+
+
+we will take private key entries and add inside hosts file (agent 1 2) 
+webserver they will use private ip's
+
+
+
+
+add the host in a different ways:
+ways to add the host entries: 
+1.add direct entries
+
+#Agent1  172.31.10.90
+#Agent2  172.31.15.185
+
+2.mentioning while running the ansible commands and apply the changes 
+ it is difficult, better way to create group 
+
+vi hosts added group entries 
+[webservers]
+two are webservers agent 1 & agent 2
+172.31.10.90---->webserver1
+172.31.15.185---->webserver2
+[dbservers]
+172.31.10.169 is  master ---> dbserver
+
+:wq
+
+
+
+
+
+
+webserver group agent1, db server agent2 private ip's
+
+
+
+we need to create ssh key
+
+ssh-keygen
+
+after creation of key we will get public key 
+
+you just copy the public key by typing 
+
+
+cat /root/.ssh/id_rsa.pub
+
+
+paste this into agent 1 & 2
+vi /root/.ssh/authorized_keys
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3s+elHa1QBWCZL4EdnIyJIMoOToKjyy2tIDTsvX4UPQrzUDL8GkBUcq2mwmKsYvvCvT1EA4rG5R48chaRcAdU4CiIZomx2eHlFbMO9DQcivlJ5iFsZrsWGzyGilbsepyAYEVo5iXWpy5YgcLv/SAsUkTQAEF4WgTBs8C0rGkKv4+LzCNvcFnBT3XGmd4w1/xVDC8XJMFaJDylGoq1/ji5p+txGvhHs41aiAawivgwCAcUyZhHxhSZ3ytNuAtBBx5F+6+lOgrgdx1C2TqSAvawx7zdfXIBAbBJw6Ffe1q339xa/pLr+4wXFGJfL8yfHW9jDzKsEAfXTZ5sDUl3kAcT root@Ansible-Master
+
+
+
+
+--Configuration to setup SSH on Client and Master Machine
+  --Remove the comments from the ssh/sshd_config file which is to be overwritten
+master machine run this command first	and then do the same on agent1 & agent2
+vi /etc/ssh/sshd_config
+
+port 22
+permitrootlogin
+pubkeyauthentication
+
+need to uncomment this for port to open for public access
+
+
+  -- After making the changes restart the sshd
+		systemctl restart sshd
+connect with agent 1 & agent 2 with its public ip 
+i will run this command on master machine.....
+ssh 13.233.194.45
+
+exit
+logout
+
+  --Generate the public key on Master machine which is to shared with clients
+	ssh-keygen
+  --following file will be created at id_rsa.pub which contains the value of public key
+     cd /root/.ssh
+	 cat id_rsa.pub
+  --Copy the content of id_rsa.pub	  file
+  --Goto Client Machine and got to /root/.ssh folder and append the master's public key to authorized_keys files
+
+--Add the hosts(IP addresses or  in hosts file on the master machine under /etc/ansible folder
+  add client hosts 
+
+ansible modules
+
+https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
+
+https://docs.ansible.com/
+https://docs.ansible.com/ansible/latest/modules/modules_by_category.html
+
+https://docs.ansible.com/ansible/latest/modules/list_of_all_modules.html
+https://docs.ansible.com/ansible/latest/modules/debug_module.html#debug-module
+
+
+ansible-doc -l
+return the module
+
+ ansible-doc -s yum
+search  the module specific
+
+
+color coding 
+
+green successful(command run successful with no change)
+yellow successful(successful with state change)
+red failure  
+purple  warning 
